@@ -31,7 +31,7 @@
 
     time_aux db 0 ; variable used when checking if the time has changed
     ;   character coords
-    player_x dw 160 ;x = 160, default center position
+    player_x dw 150 ;x = 160, default center position
     player_y dw 100 ;y = 100, default center position
     prev_x dw 160
     prev_y dw 100
@@ -73,6 +73,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         lea dx, message_title
         call printLine
         call drawBorder
+        call drawPlayer
 
     Check_Time:
         mov ah, 2Ch ; Set configuration for getting time
@@ -80,6 +81,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         cmp dh, time_aux
         JE Check_Time
         mov time_aux, dl    ;   update time
+        
         call move_player
 
         ;Compare AX to 0, if player_life is 0, stop
@@ -104,9 +106,15 @@ printLine proc near
 printLine endp
 
 move_player proc near
-    call erasePlayer
+    mov ah, 01h             ;   if no key is pressed, ZF is 0
+    int 16h
+    JZ exit_move
+
     call movePlayer ;if player movement is detected, inc or dec coords
     call drawPlayer
+    call erasePlayer
+
+    exit_move:
     ret
 move_player endp
 
@@ -117,15 +125,15 @@ drawPlayer proc near
     ;mov prev_x
 
     Draw_Player_Horizontal:
-        mov ah, 0Ch ;configuration to printing pixel
-        mov al, 0Fh ;color white
+        mov ah, 0Ch ;configuration to printing pixel                000000000
+        mov al, 0Fh ;color white                                    000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
         mov ax, cx
         sub ax, player_x
         cmp ax, player_size      ;  ZF is -7 on first run 
-        JNE Draw_Player_Horizontal  ; !(ax > player_size)
+        JNE Draw_Player_Horizontal  ; (ax != player_size)
         mov cx, player_x
         inc dx
         mov ax, dx
@@ -180,23 +188,34 @@ movePlayer proc near
 
     Move_Player_Up:
         mov ax, player_velocity
+        cmp player_y, 35
+        je next
         sub player_y, ax
         jmp stop_move
 
     Move_Player_Down:
         mov ax, player_velocity
+        cmp player_y, 165
+        je next
         add player_y, ax
         jmp stop_move
 
     Move_Player_Left:
         mov ax, player_velocity
+        cmp player_x, 17
+        je next
         SUB player_x, ax
         jmp stop_move
 
     Move_Player_Right:
         mov ax, player_velocity
+        cmp player_x, 290
+        je next
         add player_x, ax
         jmp stop_move
+		
+    next:
+        call border_collision
 
     stop_move:
         ;   mov ax, 
@@ -248,12 +267,12 @@ exit endp                                            ;   exit the function
 
 clear_screen proc near
     ;   Set the video mode to 320x200 - mode 13h
-    mov ah, 00h 
-    mov al, 13h 
+    mov ah, 00h ; set configuration for video mode
+    mov al, 13h ; set the size of video
     int 10h 
 
     ;   Set background to any color 
-    mov ah, 0bh
+    mov ah, 0bh ; set configuration
     mov bh, 00h 
     mov bl, 00h 
     int 10h 
@@ -365,5 +384,11 @@ drawBorder proc near
     call DrawTopBordeR
     ret
 drawBorder endp
+
+border_collision proc near
+    mov player_y, 100
+    mov player_x, 150
+    ret
+border_collision endp
 
 end Main                                             ;   End the main function
