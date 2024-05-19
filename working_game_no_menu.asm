@@ -11,14 +11,14 @@
     prevRow DW ?
     prevCol DW ?
     keyPressed DB ?
-    
+
 
 .code
 main proc
     mov ax, @data
     mov ds, ax
 
-    ; Clear the screen
+    ; Set video mode
     mov ax, 13h
     int 10h
 

@@ -21,17 +21,18 @@
 
 ;   combine Line Feed and Carriage return to set cursor to the next line 
 ;   { Messages
-    message_title db 'Blitz Ball', 13, 10, '$'
+    message_title db "Blitz Ball", 13, 10, '$'
     message_start db 'Press T to start', 13, 10, '$'
     message_choose db 'Press C to choose level', 13, 10, '$'
-    message_exit db 'Press E to exit', 13, 10, '$'   
+    message_exit db 'Press E to exit', 13, 10, '$' 
+    message_game_over db 'Game Over...', 13, 10, '$'  
 ;   }
 
 ;   {   Game Variables
 
     time_aux db 0 ; variable used when checking if the time has changed
     ;   character coords
-    player_x dw 150 ;x = 160, default center position
+    player_x dw 154 ;x = 160, default center position
     player_y dw 100 ;y = 100, default center position
     prev_x dw 160
     prev_y dw 100
@@ -43,22 +44,33 @@
 
     keyPressed DB 0000h
 
-    enemy1_x dw 0
-    enemy1_y dw 0
+    ;   Top left border spawn, x = 34, y = 45, add 13 on x or y
+    enemy1_x dw 24
+    enemy1_y dw 35
+    enemy1_x_prev dw 24
+    enemy1_y_prev dw 35
+
+    enemy2_x dw 284 ; right border x = 284
+    enemy2_y dw 48
+    enemy2_x_prev dw 284
+    enemy2_y_prev dw 284
+
+
 ;   {
 
-        ; border coordinates
-    leftborder_x dw 10
-    rightborder_x dw 307
+
+    ;   border coordinates
+    leftborder_x dw 19
+    rightborder_x dw 298
     verticalborder_y dw 30
     topborder_y dw 30
-    bottomborder_y dw 190
-    horizontalborder_x dw 10
+    bottomborder_y dw 179
+    horizontalborder_x dw 19
 
-    ; border size
+    ;   border size
     verticalborder_width dw 03;
-    horizontalborder_width dw 297;
-    verticalborder_height dw 163; 
+    horizontalborder_width dw 280;
+    verticalborder_height dw 152; 
     horizontalborder_height dw 03;
 
 .code   ;   Code Segment where we write our main program
@@ -69,12 +81,18 @@ Main PROC near  ;   PROC means Procedure (or Function)
     call clear_screen   ; refreshes the screen
 
     ;   Display Message
-    
+
+        mov dh, 2 ;row
+        mov dl, 2 ;column
+        mov bl, 0Ch ;color
         lea dx, message_title
         call printLine
+    ;   Display message
+    ;   --------------------------------------
         call drawBorder
         call drawPlayer
-
+        call draw_enemy1
+        call draw_enemy2
     Check_Time:
         mov ah, 2Ch ; Set configuration for getting time
         int 21h ; CH = hour, CL = minute, DH = second, DL = 1/100 seconds
@@ -82,6 +100,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         JE Check_Time
         mov time_aux, dl    ;   update time
         
+
         call move_player
 
         ;Compare AX to 0, if player_life is 0, stop
@@ -99,24 +118,70 @@ Main endp                                           ;   endp is End Procedure (E
 ; ------------------------------------------------------------------------------
 ;   End of Main Function
 ; ------------------------------------------------------------------------------
-printLine proc near
+
+printLine proc
 	mov ah, 09
-	int 21h
+    int 21h
     ret
+    ret 
 printLine endp
 
-move_player proc near
-    mov ah, 01h             ;   if no key is pressed, ZF is 0
-    int 16h
-    JZ exit_move
-
-    call movePlayer ;if player movement is detected, inc or dec coords
-    call drawPlayer
-    call erasePlayer
-
-    exit_move:
+setcur proc near
+    mov ah, 02
+    mov bh, 00
+    int 10h
     ret
-move_player endp
+setcur endp
+
+draw_enemy1 proc near
+    mov cx, enemy1_x ; CX = X, set initial x coordinates 
+    mov dx, enemy1_y ; DX = Y, set initial y coordinates
+    ;mov prev_x
+
+    Draw_Enemy1_Horizontal:
+        mov ah, 0Ch ;configuration to printing pixel                000000000
+        mov al, 0Ch ;color light red                                    000000000
+        mov bh, 00h ;page number (disregard)
+        int 10h ; call dos for printing pixel
+        inc cx  ; initial is cx ++, 161 0000 0000 
+        mov ax, cx
+        sub ax, enemy1_x
+        cmp ax, player_size      ;  ZF is -7 on first run 
+        JNE Draw_Enemy1_Horizontal  ; (ax != player_size)
+        mov cx, enemy1_x
+        inc dx
+        mov ax, dx
+        sub ax, enemy1_y
+        cmp ax, player_size
+        jne Draw_Enemy1_Horizontal        
+    ret
+    ret
+draw_enemy1 endp
+
+draw_enemy2 proc near
+    mov cx, enemy2_x ; CX = X, set initial x coordinates 
+    mov dx, enemy2_y ; DX = Y, set initial y coordinates
+    ;mov prev_x
+
+    Draw_Enemy2_Horizontal:
+        mov ah, 0Ch ;configuration to printing pixel                000000000
+        mov al, 0Ch ;color light blue                                    000000000
+        mov bh, 00h ;page number (disregard)
+        int 10h ; call dos for printing pixel
+        inc cx  ; initial is cx ++, 161 0000 0000 
+        mov ax, cx
+        sub ax, enemy2_x
+        cmp ax, player_size      ;  ZF is -7 on first run 
+        JNE Draw_Enemy2_Horizontal  ; (ax != player_size)
+        mov cx, enemy2_x
+        inc dx
+        mov ax, dx
+        sub ax, enemy2_y
+        cmp ax, player_size
+        jne Draw_Enemy2_Horizontal        
+    ret
+    ret
+draw_enemy2 endp
 
 ;   For moving the pixel
 drawPlayer proc near
@@ -142,8 +207,7 @@ drawPlayer proc near
         jne Draw_Player_Horizontal        
     ret
 drawPlayer endp
-
-movePlayer proc near
+move_player proc near
     mov ax, player_x
     mov prev_x, ax
     mov ax, player_y
@@ -189,40 +253,45 @@ movePlayer proc near
     Move_Player_Up:
         mov ax, player_velocity
         cmp player_y, 35
-        je next
+        je check_collision
         sub player_y, ax
-        jmp stop_move
+        jmp move_next
 
     Move_Player_Down:
         mov ax, player_velocity
         cmp player_y, 165
-        je next
+        je check_collision
         add player_y, ax
-        jmp stop_move
+        jmp move_next
 
     Move_Player_Left:
         mov ax, player_velocity
-        cmp player_x, 17
-        je next
+        cmp player_x, 24
+        je check_collision
         SUB player_x, ax
-        jmp stop_move
+        jmp move_next
 
     Move_Player_Right:
         mov ax, player_velocity
-        cmp player_x, 290
-        je next
+        cmp player_x, 284
+        je check_collision
         add player_x, ax
-        jmp stop_move
+        jmp move_next
 		
-    next:
+    check_collision:
         call border_collision
 
+    
+    move_next:
+        call drawPlayer
+        call erasePlayer
+
     stop_move:
+        
         ;   mov ax, 
         ret
 
-movePlayer endp
-
+move_player endp
 erasePlayer proc near
     mov cx, prev_x ; CX = X, set initial x coordinates 
     mov dx, prev_y ; DX = Y, set initial y coordinates
@@ -247,18 +316,16 @@ erasePlayer proc near
         jne Erase_Player_Horizontal        
     ret
 erasePlayer endp
-;   Clear Screen
     
-cls proc near
-	mov ax, 0600h
+cls proc near   
+	mov ax, 0600h   ;   Clear Screen
 	mov bh, 07
 	mov cx, 0000
 	mov dx, 184fh
 	int 10h
 	ret
 cls endp
-
-;   Exit Game
+;  Exit Game
 exit proc near                
     mov ah, 4ch
     int 21h
@@ -303,7 +370,6 @@ drawLeftBorder proc near
         jne Draw_LeftBorder_Horizontal        
     ret
 drawLeftBorder endp
-
 drawRightBorder proc near
     mov cx, rightborder_x    ; CX = X, set initial x coordinates 
     mov dx, verticalborder_y    ; DX = Y, set initial y coordinates
@@ -328,7 +394,6 @@ drawRightBorder proc near
         jne Draw_RightBorder_Horizontal        
     ret
 drawRightBorder endp
-
 drawTopBorder proc near
     mov cx, horizontalborder_x    ; CX = X, set initial x coordinates 
     mov dx, topborder_y           ; DX = Y, set initial y coordinates
@@ -352,7 +417,6 @@ drawTopBorder proc near
         jne Draw_TopBorder_Horizontal        
     ret
 drawTopBorder endp
-
 drawBottomBorder proc near
     mov cx, horizontalborder_x    ; CX = X, set initial x coordinates 
     mov dx, bottomborder_y           ; DX = Y, set initial y coordinates
@@ -376,7 +440,6 @@ drawBottomBorder proc near
         jne Draw_BottomBorder_Horizontal        
     ret
 drawBottomBorder endp
-
 drawBorder proc near
     call DrawBottomBorder
     call DrawLeftBorder
@@ -387,7 +450,7 @@ drawBorder endp
 
 border_collision proc near
     mov player_y, 100
-    mov player_x, 150
+    mov player_x, 154
     ret
 border_collision endp
 
