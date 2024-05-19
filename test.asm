@@ -42,7 +42,9 @@
 
     ;   player size
     player_size dw 0Fh  ; size of player = 15
+
     player_velocity dw 16 ; speed is 16
+
     player_life dw 03h  ; starting hp
 
     keyPressed DB 0000h

@@ -8,6 +8,8 @@
     message_exit db 'Press E to exit', 13, 10, '$'
     keyPressed DB ?
 
+
+
 .code
 main proc
     mov ax, @data
@@ -51,8 +53,8 @@ main proc
 
 start_game:
     ; Reset cursor position to top left corner
-    mov dh, 20
-	mov dl, 13	; y axis
+    mov dh, 50
+	mov dl, 50	; y axis
     call setcur
 
     ; Call subroutine to draw and move pixel
@@ -103,8 +105,8 @@ SpriteAnimation proc
     mov al, 13h
     int 10h
 
-    mov dh, 1
-    mov al, 1
+    mov dh, 20
+    mov dl, 30
 
     call ShowSprite
 
