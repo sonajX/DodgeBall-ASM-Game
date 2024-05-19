@@ -21,25 +21,28 @@
 
 ;   combine Line Feed and Carriage return to set cursor to the next line 
 ;   { Messages
-    message_title db "Blitz Ball", 13, 10, '$'
-    message_start db 'Press T to start', 13, 10, '$'
-    message_choose db 'Press C to choose level', 13, 10, '$'
-    message_exit db 'Press E to exit', 13, 10, '$' 
-    message_game_over db 'Game Over...', 13, 10, '$'  
+    message_title db 'BLITZ BALL', 13, 10
+	message_title_1 equ $-message_title
+    message_start db 'Press T to Start', 13, 10
+	message_start_1 equ $-message_start
+    message_choose db 'Press C to choose Level', 13, 10
+	message_choose_1 equ $-message_choose
+    message_exit db 'Press E to Exit', 13, 10
+	message_exit_1 equ $-message_exit 
 ;   }
 
 ;   {   Game Variables
 
     time_aux db 0 ; variable used when checking if the time has changed
     ;   character coords
-    player_x dw 154 ;x = 160, default center position
-    player_y dw 100 ;y = 100, default center position
-    prev_x dw 160
-    prev_y dw 100
+    player_x dw 152 ;x = 160, default center position
+    player_y dw 92 ;y = 100, default center position
+    prev_x dw 152
+    prev_y dw 192
 
     ;   player size
-    player_size dw 0Ch  ; size of player = 12
-    player_velocity dw 0Dh ; speed is 13
+    player_size dw 0Fh  ; size of player = 15
+    player_velocity dw 10h ; speed is 16
     player_life dw 03h  ; starting hp
 
     keyPressed DB 0000h
@@ -77,61 +80,108 @@
 
 Main PROC near  ;   PROC means Procedure (or Function)
     mov ax, @data
-    mov ds, ax
+    mov ds, ax          ;
+    mov es, ax  
+
+    Menu:
+    mov ax, 0013h
+    int 10h
+    mov ah, 0Bh
+    mov bx, 0000h
+    int 10h
+
+    
+    call menu_drawTopBorder
+    call menu_drawBottomBorder
+
+    ; Display Title
+    mov dh, 05    ;y
+    mov dl, 14    ;x
+    mov bl, 09h   ;color
+    mov cx, message_title_1 ;msg length
+    lea bp, message_title   ;msg
+    mov ax, 1301h   
+    mov bh, 00h   ;page
+    int 10h
+
+    ; Start Prompt
+    mov dh, 14    ;y
+    mov dl, 11    ;x
+    mov bl, 02h   ;color
+    mov cx, message_start_1 ;msg length
+    lea bp, message_start  ;msg
+    mov ax, 1301h   
+    mov bh, 00h   ;page
+    int 10h
+
+    ; Choose Level Prompt
+    mov dh, 16    ;y
+    mov dl, 08    ;x
+    mov bl, 0Ch   ;color
+    mov cx, message_choose_1 ;msg length
+    lea bp, message_choose   ;msg
+    mov ax, 1301h   
+    mov bh, 00h   ;page
+    int 10h
+
+    ; Exit Prompt
+    mov dh, 18    ;y
+    mov dl, 11    ;x
+    mov bl, 0Dh   ;color
+    mov cx, message_exit_1 ;msg length
+    lea bp, message_exit   ;msg
+    mov ax, 1301h   
+    mov bh, 00h   ;page
+    int 10h
+   
+    wait_input:
+    mov ah, 01h         
+    int 16h             
+    jz wait_input       
+    mov ah, 00h        
+    int 16h             
+    cmp al, 'T'
+    je start_game
+    cmp al, 't'
+    je start_game
+    cmp al, 'E'
+    je wait_input
+    cmp al, 'e'
+    je wait_input
+    cmp al, 'C'
+    je wait_input
+    cmp al, 'c'
+    je wait_input
+
+    jmp wait_input      ; Jump back to wait_input if any other character is pressed
+
+    Start_Game:
     call clear_screen   ; refreshes the screen
+    call drawBorder
+    call drawPlayer    ; drawPlayer at center
+    
+    ; call draw_enemy1
+    ; call draw_enemy2
 
-    ;   Display Message
-
-        mov dh, 2 ;row
-        mov dl, 2 ;column
-        mov bl, 0Ch ;color
-        lea dx, message_title
-        call printLine
-    ;   Display message
-    ;   --------------------------------------
-        call drawBorder
-        call drawPlayer
-        call draw_enemy1
-        call draw_enemy2
     Check_Time:
         mov ah, 2Ch ; Set configuration for getting time
         int 21h ; CH = hour, CL = minute, DH = second, DL = 1/100 seconds
-        cmp dh, time_aux
+        cmp dl, time_aux
         JE Check_Time
         mov time_aux, dl    ;   update time
-        
 
         call move_player
-
-        ;Compare AX to 0, if player_life is 0, stop
-        mov ax, player_life
-        cmp ax, 0
-        JZ Stop
+        ;call move_enemy1      
 
         JMP Check_Time
 
 Stop:
     call exit
     ret
-
 Main endp                                           ;   endp is End Procedure (End Function)
 ; ------------------------------------------------------------------------------
 ;   End of Main Function
 ; ------------------------------------------------------------------------------
-
-printLine proc
-	mov ah, 09
-    int 21h
-    ret
-    ret 
-printLine endp
-
-setcur proc near
-    mov ah, 02
-    mov bh, 00
-    int 10h
-    ret
-setcur endp
 
 draw_enemy1 proc near
     mov cx, enemy1_x ; CX = X, set initial x coordinates 
@@ -140,7 +190,7 @@ draw_enemy1 proc near
 
     Draw_Enemy1_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Ch ;color light red                                    000000000
+        mov al, 0Ch ;color light red                                000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -155,8 +205,38 @@ draw_enemy1 proc near
         cmp ax, player_size
         jne Draw_Enemy1_Horizontal        
     ret
-    ret
 draw_enemy1 endp
+erase_enemy1 proc near 
+    mov cx, enemy1_x_prev ; CX = X, set initial x coordinates 
+    mov dx, enemy1_y ; DX = Y, set initial y coordinates
+
+    Erase_Enemy1_Horizontal:
+        mov ah, 0Ch ;configuration to printing pixel
+        mov al, 00h ;color black
+        mov bh, 00h ;page number (disregard)
+        int 10h ; call dos for printing pixel
+        inc cx  ; initial is cx ++, 161 0000 0000 
+        mov ax, cx
+        sub ax, enemy1_x_prev
+        cmp ax, player_size      ;  ZF is -7 on first run 
+        JNE Erase_Enemy1_Horizontal  ; !(ax > player_size)
+        mov cx, enemy1_x_prev
+        inc dx
+        mov ax, dx
+        sub ax, enemy1_y
+        cmp ax, player_size
+        jne Erase_Enemy1_Horizontal        
+    ret
+erase_enemy1 endp
+move_enemy1 proc near
+    call draw_enemy1
+    mov ax, enemy1_x
+    mov enemy1_x_prev, ax
+    call erase_enemy1
+    add enemy1_x, 4
+    call draw_enemy1
+    ret
+move_enemy1 endp
 
 draw_enemy2 proc near
     mov cx, enemy2_x ; CX = X, set initial x coordinates 
@@ -164,7 +244,7 @@ draw_enemy2 proc near
     ;mov prev_x
 
     Draw_Enemy2_Horizontal:
-        mov ah, 0Ch ;configuration to printing pixel                000000000
+        mov ah, 0Ch ;configuration to printing pixel                     000000000
         mov al, 0Ch ;color light blue                                    000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
@@ -185,28 +265,29 @@ draw_enemy2 endp
 
 ;   For moving the pixel
 drawPlayer proc near
-    mov cx, player_x ; CX = X, set initial x coordinates 
-    mov dx, player_y ; DX = Y, set initial y coordinates
+    mov cx, player_x ; CX = X, set initial x coordinates, 0
+    mov dx, player_y ; DX = Y, set initial y coordinates, 0
     ;mov prev_x
 
     Draw_Player_Horizontal:
-        mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Fh ;color white                                    000000000
+        mov ah, 0Ch ;configuration to printing pixel
+        mov al, 0Fh ;color white                                   
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
-        inc cx  ; initial is cx ++, 161 0000 0000 
+        inc cx  ; 
         mov ax, cx
         sub ax, player_x
-        cmp ax, player_size      ;  ZF is -7 on first run 
-        JNE Draw_Player_Horizontal  ; (ax != player_size)
-        mov cx, player_x
-        inc dx
+        cmp ax, player_size 
+        JNE Draw_Player_Horizontal
+        mov cx, player_x        
+        inc dx                  
         mov ax, dx
         sub ax, player_y
         cmp ax, player_size
         jne Draw_Player_Horizontal        
     ret
 drawPlayer endp
+
 move_player proc near
     mov ax, player_x
     mov prev_x, ax
@@ -292,6 +373,7 @@ move_player proc near
         ret
 
 move_player endp
+
 erasePlayer proc near
     mov cx, prev_x ; CX = X, set initial x coordinates 
     mov dx, prev_y ; DX = Y, set initial y coordinates
@@ -300,7 +382,7 @@ erasePlayer proc near
 
     Erase_Player_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 00h ;color blue
+        mov al, 01h ;color black
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -316,7 +398,6 @@ erasePlayer proc near
         jne Erase_Player_Horizontal        
     ret
 erasePlayer endp
-    
 cls proc near   
 	mov ax, 0600h   ;   Clear Screen
 	mov bh, 07
@@ -325,13 +406,11 @@ cls proc near
 	int 10h
 	ret
 cls endp
-;  Exit Game
 exit proc near                
-    mov ah, 4ch
+    mov ah, 4ch ;  Exit Game
     int 21h
     ret
 exit endp                                            ;   exit the function
-
 clear_screen proc near
     ;   Set the video mode to 320x200 - mode 13h
     mov ah, 00h ; set configuration for video mode
@@ -345,7 +424,6 @@ clear_screen proc near
     int 10h 
     ret
 clear_screen endp
-
 drawLeftBorder proc near
     mov cx, leftborder_x    ; CX = X, set initial x coordinates 
     mov dx, verticalborder_y    ; DX = Y, set initial y coordinates
@@ -401,7 +479,7 @@ drawTopBorder proc near
 
     Draw_TopBorder_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 02h ;color white
+        mov al, 02h ;color 
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -422,9 +500,9 @@ drawBottomBorder proc near
     mov dx, bottomborder_y           ; DX = Y, set initial y coordinates
     ;mov prev_x
 
-    Draw_BottomBorder_Horizontal:
+Draw_BottomBorder_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 02h ;color white
+        mov al, 02h ;color 
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -444,14 +522,71 @@ drawBorder proc near
     call DrawBottomBorder
     call DrawLeftBorder
     call DrawRightBorder
-    call DrawTopBordeR
+    call DrawTopBorder
     ret
 drawBorder endp
+menu_drawTopBorder proc
+    mov cx, 0       ; CX = X, set initial x coordinates 
+    mov dx, 15      ; DX = Y, set initial y coordinates
+    ;mov prev_x
 
+    menu_Draw_TopBorder_Horizontal:
+        mov ah, 0Ch ;configuration to printing pixel
+        mov al, 0Ah ;color
+        mov bh, 00h ;page number (disregard)
+        int 10h ; call dos for printing pixel
+        inc cx  ; initial is cx ++, 161 0000 0000 
+        mov ax, cx
+        sub ax, 0
+        cmp ax, 320   ;  ZF is -7 on first run 
+        JNE menu_Draw_TopBorder_Horizontal  ; !(ax > player_size)
+        mov cx, 0
+        inc dx
+        mov ax, dx
+        sub ax, 15
+        cmp ax, 3
+        jne menu_Draw_TopBorder_Horizontal        
+    ret
+menu_drawTopBorder endp
+menu_drawBottomBorder proc
+    mov cx, 0        ; CX = X, set initial x coordinates 
+    mov dx, 185      ; DX = Y, set initial y coordinates
+    ;mov prev_x
+
+    menu_Draw_BottomBorder_Horizontal:
+        mov ah, 0Ch ;configuration to printing pixel
+        mov al, 0Ah ;color white
+        mov bh, 00h ;page number (disregard)
+        int 10h ; call dos for printing pixel
+        inc cx  ; initial is cx ++, 161 0000 0000 
+        mov ax, cx
+        sub ax, 0
+        cmp ax, 320   ;  ZF is -7 on first run 
+        JNE menu_Draw_BottomBorder_Horizontal  ; 
+        mov cx, 0
+        inc dx
+        mov ax, dx
+        sub ax, 185
+        cmp ax, 3
+        jne menu_Draw_BottomBorder_Horizontal        
+    ret
+menu_drawBottomBorder endp
 border_collision proc near
     mov player_y, 100
     mov player_x, 154
     ret
 border_collision endp
+printLine proc
+	mov ah, 09
+    int 21h
+    ret
+    ret 
+printLine endp
+setcur proc near
+    mov ah, 02
+    mov bh, 00
+    int 10h
+    ret
+setcur endp
 
 end Main                                             ;   End the main function
