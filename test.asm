@@ -37,8 +37,8 @@
     prev_y dw 100
 
     ;   player size
-    player_size dw 07h  ; size of player
-    player_velocity dw 08h ; speed should be size + 1
+    player_size dw 0Ch  ; size of player = 12
+    player_velocity dw 0Dh ; speed is 13
     player_life dw 03h  ; starting hp
 
     keyPressed DB 0000h
