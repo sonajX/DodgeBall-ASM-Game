@@ -184,7 +184,6 @@ Main PROC near  ;   PROC means Procedure (or Function)
 
     start_game:
         call display_game_hud
-
         call drawBorder
         call drawPlayer    ; drawPlayer at center
         call draw_enemy1
@@ -470,7 +469,7 @@ clear_screen proc near
     mov ah, 00h ; set configuration for video mode
     mov al, 13h ; set the size of video
     int 10h 
-
+    
     ;   Set background to any color 
     mov ah, 0bh ; set configuration
     mov bh, 00h 
