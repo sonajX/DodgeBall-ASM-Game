@@ -22,17 +22,17 @@
 ;   combine Line Feed and Carriage return to set cursor to the next line 
 ;   { Messages
     message_title db 'BLITZ BALL', 13, 10
-	message_title_1 equ $-message_title
+	  message_title_1 equ $-message_title
     message_start db 'Press T to Start', 13, 10
-	message_start_1 equ $-message_start
+  	message_start_1 equ $-message_start
     message_choose db 'Press C to Choose Level', 13, 10
-	message_choose_1 equ $-message_choose
+  	message_choose_1 equ $-message_choose
     message_info db 'Press U for More Info', 13, 10
     message_info_1 equ $-message_info
     message_extra db "Press S for Extras", 13, 10
     message_extra_1 equ $-message_extra
     message_exit db 'Press E to Exit', 13, 10
-	message_exit_1 equ $-message_exit
+	  message_exit_1 equ $-message_exit
     message_life db 'Lives: ', 13, 10
     message_life_1 equ $-message_life
     message_score db 'Score: 000', 13, 10
@@ -44,7 +44,6 @@
 ;   }
 
 ;   {   Game Variables
-
     time_aux db 0 ; variable used when checking if the time has changed
     ;   character coords
     player_x dw 152 ;x = 160, default center position
@@ -112,6 +111,20 @@
     enemy8_x_prev dw 284
     enemy8_y_prev dw 156
 
+    ;   border coordinates
+    leftborder_x dw 19
+    rightborder_x dw 297
+    verticalborder_y dw 39
+    topborder_y dw 39
+    bottomborder_y dw 173
+    horizontalborder_x dw 19
+
+    ;   border size
+    verticalborder_width dw 03;
+    horizontalborder_width dw 280;
+    verticalborder_height dw 137; 
+    horizontalborder_height dw 03;
+
     player_color_pattern db 00h,00h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,00h,00h
                          db 00h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,00h
                          db 01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h
@@ -127,40 +140,6 @@
                          db 00h,00h,00h,04h,04h,04h,00h,00h,00h,04h,04h,04h,00h,00h,00h
                          db 00h,04h,04h,04h,04h,04h,00h,00h,00h,04h,04h,04h,04h,04h,00h
                          db 00h,08h,08h,08h,08h,08h,00h,00h,00h,08h,08h,08h,08h,08h,00h
-
-    tennis_color_pattern    db 00h,00h,00h,00h,00h,0Ah,0Ah,0Ah,0Ah,0Ah,00h,00h,00h,00h,00h
-                        db 00h,00h,00h,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,00h,00h,00h
-                        db 00h,00h,0Ah,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Ah,00h,00h
-                        db 00h,0Ah,0Ah,0Fh,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Fh,0Ah,0Ah,00h
-                        db 00h,0Ah,0Ah,0Ah,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Ah,0Ah,0Ah,00h
-                        db 0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Fh,0Fh,0Fh,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah
-                        db 0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah
-                        db 0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah
-                        db 0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah
-                        db 0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Fh,0Fh,0Fh,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah
-                        db 00h,0Ah,0Ah,0Ah,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Ah,0Ah,00h
-                        db 00h,0Ah,0Ah,0Fh,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Fh,0Ah,0Ah,00h
-                        db 00h,00h,0Ah,0Fh,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Fh,0Ah,00h,00h
-                        db 00h,00h,00h,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,0Ah,00h,00h,00h
-                        db 00h,00h,00h,00h,00h,0Ah,0Ah,0Ah,0Ah,0Ah,00h,00h,00h,00h,00h
-                     
-
-;   {
-
-
-    ;   border coordinates
-    leftborder_x dw 19
-    rightborder_x dw 297
-    verticalborder_y dw 39
-    topborder_y dw 39
-    bottomborder_y dw 173
-    horizontalborder_x dw 19
-
-    ;   border size
-    verticalborder_width dw 03;
-    horizontalborder_width dw 280;
-    verticalborder_height dw 137; 
-    horizontalborder_height dw 03;
 
 .code   ;   Code Segment where we write our main program
 
@@ -205,6 +184,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
 
     start_game:
         call display_game_hud
+
         call drawBorder
         call drawPlayer    ; drawPlayer at center
         call draw_enemy1
@@ -387,7 +367,6 @@ display_game_hud proc near
     mov bx, 000Bh ;page+color
     mov cx, message_score_1 ;msg length
     lea bp, message_score   ;msg
-    
     int 10h
     ; Display Time
     mov dh, 03     ;y
@@ -452,6 +431,14 @@ display_menu proc near
     lea bp, message_choose  ;   msg 
     int 10h
 
+    ; Exit Prompt
+    mov dh, 18              ;   y
+    mov dl, 11              ;   x
+    mov bx, 00Dh            ;   page+color
+    mov cx, message_exit_1  ;   msg length
+    lea bp, message_exit    ;   msg
+    int 10h
+    
     ; Display Information Prompt
     mov dh, 16              ;   y
     mov dl, 10              ;   x
@@ -608,9 +595,16 @@ move_enemy1 proc near
     mov ax, enemy1_x
     mov enemy1_x_prev, ax
     call erase_enemy1
-    add enemy1_x, 4
+    add enemy1_x, 4  
+
+    mov ax, enemy1_x
+    cmp ax, 280
+    JE Exit_Move_Enemy1
+
     call draw_enemy1
-    ret
+
+    Exit_Move_Enemy1:
+        ret
 move_enemy1 endp
 
 draw_enemy2 proc near
@@ -790,24 +784,26 @@ draw_enemy8 endp
 drawPlayer proc near
     mov cx, player_x ; CX = X, set initial x coordinates, 0
     mov dx, player_y ; DX = Y, set initial y coordinates, 0
+    mov si, offset player_color_pattern
     ;mov prev_x
 
     Draw_Player_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 03h ;color white                                   
+        mov al, [si] ;color pattern
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
+        inc si
         inc cx  ; 
         mov ax, cx
         sub ax, player_x
         cmp ax, player_size         ;   15
         JNE Draw_Player_Horizontal
-        mov cx, player_x        
-        inc dx                  
+        mov cx, player_x
+        inc dx
         mov ax, dx
         sub ax, player_y
         cmp ax, player_size
-        jne Draw_Player_Horizontal        
+        jne Draw_Player_Horizontal
     ret
 drawPlayer endp
 
@@ -819,7 +815,7 @@ erasePlayer proc near
 
     Erase_Player_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 01h ;color black
+        mov al, 00h ;color black
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -1006,6 +1002,14 @@ setcur proc near
     int 10h
     ret
 setcur endp
+
+enemy_collision_right_border proc near
+    ;   Check enemy1 for collision to the border
+    mov ax, enemy1_x
+    cmp ax, 280
+    call erase_enemy1
+    ret
+enemy_collision_right_border endp
 
 
 
