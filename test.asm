@@ -16,29 +16,33 @@
 
 .model small    ; Sets the model to small where it can use 64K of data, this is suffficient
 .stack 100h     ; sets stack segment
+
 .data           ; data segment is where we instantiate our DATA or WORDS
 
 
 ;   combine Line Feed and Carriage return to set cursor to the next line 
 ;   { Messages
-    message_start db 'Press T to Start', 13, 10
+    message_start db 'Press T to Start'
   	message_start_1 equ $-message_start
-    message_choose db 'Press C to Choose Level', 13, 10
+    message_choose db 'Press C to Choose Level'
   	message_choose_1 equ $-message_choose
-    message_info db 'Press U for More Info', 13, 10
+    message_info db 'Press U for More Info'
     message_info_1 equ $-message_info
-    message_extra db "Press S for Extras", 13, 10
+    message_extra db "Press S for Extras"
     message_extra_1 equ $-message_extra
-    message_exit db 'Press E to Exit', 13, 10
+    message_exit db 'Press E to Exit'
 	message_exit_1 equ $-message_exit
-    message_life db 'Lives: ', 13, 10
+    message_life db 'Lives: '
     message_life_1 equ $-message_life
-    message_score db 'Score: 000', 13, 10
+    message_score db 'Score: 000'
     message_score_1 equ $-message_score
-    message_time db 'Time: ', 13, 10
+    message_time db 'Time: '
     message_time_1 equ $-message_time
-    message_quit db 'Exit[E]', 13, 10
+    message_quit db 'Exit[E]'
     message_quit_1 equ $-message_quit
+    message_victory db 'You Win!'
+    message_victory_1 equ $-message_victory
+
 ;   }
 
 ;   {   Game Variables
@@ -49,6 +53,12 @@
     ones_1 equ $-ones
     tens dw 36h  
     tens_1 equ $-tens
+    score_ones dw 30h
+    score_ones_1 equ $-score_ones
+    score_tens dw 30h
+    score_tens_1 equ $-score_tens
+    score_hund dw 30h
+    score_hund_1 equ $-score_hund
 
     ;   character coords
     player_x dw 152 ;x = 160, default center position
@@ -68,10 +78,12 @@
     ;   Top left border spawn, x = 34, y = 45, add 13 on x or y
     life1_x dw 75
     life1_y dw 184
-    life2_x dw 87
+    life2_x dw 98
     life2_y dw 184
-    life3_x dw 99
+    life3_x dw 121
     life3_y dw 184
+    life_width dw 19
+    life_height dw 9
 
     ; Left enemies
     enemy1_x dw 24
@@ -130,21 +142,48 @@
     verticalborder_height dw 137; 
     horizontalborder_height dw 03;
 
-    player_color_pattern db 00h,00h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,00h,00h
-                         db 00h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,00h
-                         db 01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h
-                         db 06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h
-                         db 06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h
-                         db 06h,06h,00h,00h,0Fh,0Fh,06h,06h,06h,00h,00h,0Fh,0Fh,06h,06h
-                         db 06h,06h,00h,00h,0Fh,0Fh,06h,06h,06h,00h,00h,0Fh,0Fh,06h,06h
-                         db 06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h
-                         db 06h,06h,06h,06h,06h,06h,06h,06h,06h,00h,06h,06h,06h,06h,06h
-                         db 06h,06h,06h,06h,06h,06h,00h,00h,00h,06h,06h,06h,06h,06h,06h
-                         db 00h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,06h,00h
-                         db 00h,00h,00h,0Fh,0Fh,0Fh,00h,00h,00h,0Fh,0Fh,0Fh,00h,00h,00h
-                         db 00h,00h,00h,04h,04h,04h,00h,00h,00h,04h,04h,04h,00h,00h,00h
-                         db 00h,04h,04h,04h,04h,04h,00h,00h,00h,04h,04h,04h,04h,04h,00h
-                         db 00h,08h,08h,08h,08h,08h,00h,00h,00h,08h,08h,08h,08h,08h,00h
+    player_color_pattern db 00h,00h,00h,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,00h,00h,00h
+                        db 00h,00h,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,00h,00h
+                        db 00h,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,0Eh,00h
+                        db 00h,0Eh,0Eh,0Eh,0Eh,06h,06h,06h,06h,0Eh,0Eh,06h,06h,0Eh,00h
+                        db 00h,0Eh,0Eh,0Eh,06h,06h,06h,06h,06h,0Eh,06h,06h,06h,0Eh,00h
+                        db 00h,0Eh,0Eh,06h,06h,06h,0Fh,00h,06h,06h,06h,00h,0Fh,06h,00h
+                        db 00h,0Eh,0Eh,06h,06h,0Dh,0Fh,00h,06h,06h,06h,00h,0Fh,0Dh,00h
+                        db 00h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,00h
+                        db 04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,04h,00h
+                        db 04h,04h,08h,08h,08h,08h,08h,07h,07h,07h,07h,07h,08h,08h,00h
+                        db 04h,08h,08h,08h,08h,08h,08h,08h,07h,07h,07h,08h,08h,08h,00h
+                        db 00h,08h,08h,08h,08h,08h,08h,08h,08h,07h,08h,08h,08h,08h,00h
+                        db 00h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,01h,00h
+                        db 00h,00h,01h,01h,01h,01h,00h,00h,00h,01h,01h,01h,01h,00h,00h
+                        db 00h,00h,01h,01h,01h,01h,01h,00h,00h,01h,01h,01h,01h,01h,00h 
+
+    life_color_pattern  db 00h,00h,07h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,07h,00h,00h
+                        db 00h,07h,0fh,07h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,07h,0fh,07h,00h
+                        db 07h,0fh,0fh,0fh,07h,00h,00h,04h,04h,00h,04h,04h,00h,00h,07h,0fh,0fh,0fh,07h
+                        db 07h,0fh,0fh,0fh,0fh,07h,04h,0fh,04h,04h,04h,04h,04h,07h,0fh,0fh,0fh,0fh,07h
+                        db 07h,0fh,0fh,07h,0fh,0fh,04h,04h,04h,04h,04h,04h,04h,0fh,0fh,07h,0fh,0fh,07h
+                        db 00h,07h,0fh,0fh,07h,0fh,04h,04h,04h,04h,04h,04h,04h,0fh,07h,0fh,0fh,07h,00h
+                        db 00h,00h,07h,0fh,0fh,07h,00h,04h,04h,04h,04h,04h,00h,07h,0fh,0fh,07h,00h,00h
+                        db 00h,00h,00h,07h,07h,00h,00h,00h,04h,04h,04h,00h,00h,00h,07h,07h,00h,00h,00h
+                        db 00h,00h,00h,00h,00h,00h,00h,00h,00h,04h,00h,00h,00h,00h,00h,00h,00h,00h,00h
+
+
+    soccer_color_pattern    db 00h,00h,00h,00h,00h,08h,08h,08h,08h,08h,00h,00h,00h,00h,00h
+                        db 00h,00h,00h,0Fh,0Fh,07h,08h,08h,08h,07h,0Fh,0Fh,00h,00h,00h
+                        db 00h,00h,0Fh,0Fh,0Fh,0Fh,0Fh,07h,0Fh,0Fh,0Fh,0Fh,0Fh,00h,00h
+                        db 00h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h
+                        db 00h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,07h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h
+                        db 08h,07h,0Fh,0Fh,0Fh,07h,08h,08h,08h,07h,0Fh,0Fh,0Fh,07h,08h
+                        db 08h,08h,0Fh,0Fh,0Fh,08h,08h,08h,08h,08h,0Fh,0Fh,0Fh,08h,08h
+                        db 08h,08h,07h,0Fh,07h,08h,08h,08h,08h,08h,07h,0Fh,07h,08h,08h
+                        db 08h,08h,0Fh,0Fh,0Fh,08h,08h,08h,08h,08h,0Fh,0Fh,0Fh,08h,08h
+                        db 08h,07h,0Fh,0Fh,0Fh,07h,08h,08h,08h,07h,0Fh,0Fh,0Fh,07h,08h
+                        db 00h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,07h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h
+                        db 00h,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,00h
+                        db 00h,00h,0Fh,0Fh,0Fh,0Fh,0Fh,07h,0Fh,0Fh,0Fh,0Fh,0Fh,00h,00h
+                        db 00h,00h,00h,0Fh,0Fh,07h,08h,08h,08h,07h,0Fh,0Fh,00h,00h,00h
+                        db 00h,00h,00h,00h,00h,08h,08h,08h,08h,08h,00h,00h,00h,00h,00h
 
     logo_color_pattern_0 db 00h,00h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
       db 00h,00h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,08h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h,00h
@@ -350,7 +389,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         mov es, ax  
 
     Start: 
-        call reset_variables
+        ;call reset_variables
         call display_menu
     
     wait_input:
@@ -371,6 +410,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         je wait_input
         cmp al, 'c'
         je wait_input
+        cmp al, 'u'
 
         jmp wait_input      ; Jump back to wait_input if any other character is pressed
 
@@ -411,6 +451,7 @@ Main PROC near  ;   PROC means Procedure (or Function)
         dec time_seconds
         call move_enemy1
         call countdown
+        call display_score
         mov time_centiseconds, 0
         cmp time_seconds, 60    ; 63 - 60 = 3
 
@@ -585,6 +626,24 @@ display_game_hud proc near
     mov cx, message_score_1 ;msg length
     lea bp, message_score   ;msg
     int 10h
+    mov dh, 3               ; y position
+    mov dl, 12              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_ones      ; message
+    int 10h
+    mov dh, 3               ; y position
+    mov dl, 11              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_tens      ; message
+    int 10h
+    mov dh, 3               ; y position
+    mov dl, 10              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_hund      ; message
+    int 10h
     ; Display Time
     mov dh, 03     ;y
     mov dl, 28     ;x
@@ -637,10 +696,10 @@ display_menu proc near
     call draw_logo
 
     ; Display Start Prompt
-    mov ax, 1301h           ;   set configuration to ah 13h, al 01h
+    mov ax, 1300h           ;   set configuration to ah 13h, al 01h
     mov dh, 14              ;   y
     mov dl, 12              ;   x
-    mov bl, 000Ah           ;   page + color
+    mov bx, 000Ah           ;   bh = page , bl = color
     mov cx, message_start_1 ;   msg length
     lea bp, message_start   ;   msg
     int 10h
@@ -713,7 +772,75 @@ countdown proc near
     ret
 countdown endp
 
-    draw_logo proc near
+display_score proc near
+    score_check_ones:
+    cmp score_ones, '0'
+    cmp score_ones, '5'
+    je score_check_tens
+    add score_ones, 5
+    jmp score_print_ones
+
+    score_check_tens:
+    cmp score_tens, '9'
+    je score_check_hund
+    add score_tens, 1
+    mov score_ones, '0'
+    jmp score_print_tens
+
+    score_check_hund:
+    cmp score_hund, '9'
+    add score_hund, 1
+    mov score_tens, '0'
+    mov score_ones, '0'
+    jmp score_print_hund
+
+    score_print_ones:
+    mov ax, 1300h
+    mov dh, 3               ; y position
+    mov dl, 12              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_ones      ; message
+    int 10h
+    jmp score_stop_timer
+
+    score_print_tens:
+    mov ax, 1300h
+    mov dh, 3               ; y position
+    mov dl, 11              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_tens      ; message
+    int 10h
+    jmp score_print_ones
+
+    score_print_hund:
+    mov ax, 1300h
+    mov dh, 3               ; y position
+    mov dl, 10              ; x position
+    mov bx, 000Dh           ; page+color
+    mov cx, 1               ; message length
+    lea bp, score_hund      ; message
+    int 10h
+    jmp score_print_tens
+
+    score_stop_timer:
+    ret
+display_score endp
+
+victory proc near
+    call clear_screen
+    ; Display Start Prompt
+    mov ax, 1300h           ;   set configuration to ah 13h, al 01h
+    mov dh, 14              ;   y
+    mov dl, 12              ;   x
+    mov bx, 000Ah           ;   bh = page , bl = color
+    mov cx, message_victory_1 ;   msg length
+    lea bp, message_victory   ;   msg
+    int 10h
+victory endp
+
+draw_logo proc near
     ; Part 1
     mov cx, logo_x                ; CX = X, set initial x coordinates
     mov dx, logo_y                ; DX = Y, set initial y coordinates
@@ -828,69 +955,76 @@ clear_screen proc near
     int 10h 
     ret
 clear_screen endp
+
 draw_life1 proc near
         mov cx, life1_x ; CX = X, set initial x coordinates 
         mov dx, life1_y ; DX = Y, set initial y coordinates
+        mov si, offset life_color_pattern
 
     Draw_Life1_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Ch ;color                               000000000
+        mov al, [si] ;color                               000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
+        inc si
         inc cx  ; initial is cx ++, 161 0000 0000 
         mov ax, cx
         sub ax, life1_x ; x
-        cmp ax, 8     ;  ZF is -7 on first run 
+        cmp ax, life_width     ;  ZF is -7 on first run 
         JNE Draw_Life1_Horizontal  ; (ax != player_size)
         mov cx, life1_x ; x
         inc dx
         mov ax, dx
         sub ax, life1_y ; y
-        cmp ax, 8
+        cmp ax, life_height
         jne Draw_Life1_Horizontal        
     ret
 draw_life1 endp
 draw_life2 proc near
         mov cx, life2_x ; CX = X, set initial x coordinates 
         mov dx, life2_y ; DX = Y, set initial y coordinates
+        mov si, offset life_color_pattern
         
     Draw_Life2_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Ch ;color light red                                000000000
+        mov al, [si] ;color light red                                000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
+        inc si
         inc cx  ; initial is cx ++, 161 0000 0000 
         mov ax, cx
         sub ax, life2_x ; x
-        cmp ax, 8      ;  ZF is -7 on first run 
+        cmp ax, life_width      ;  ZF is -7 on first run 
         JNE Draw_Life2_Horizontal  ; (ax != player_size)
         mov cx, life2_x ; x
         inc dx
         mov ax, dx
         sub ax, life2_y ; y
-        cmp ax, 8
+        cmp ax, life_height
         jne Draw_Life2_Horizontal        
     ret
 draw_life2 endp
 draw_life3 proc near
         mov cx, life3_x ; CX = X, set initial x coordinates 
-        mov dx, life3_y ; DX = Y, set initial y coordinates
-        
+        mov dx, life3_y ; DX = Y, set initial y coordinateacs
+        mov si, offset life_color_pattern
+
     Draw_Life3_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Ch ;color light red                                000000000
+        mov al, [si] ;color light red                                000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
+        inc si
         inc cx  ; initial is cx ++, 161 0000 0000 
         mov ax, cx
         sub ax, life3_x ; x
-        cmp ax, 8    ;  ZF is -7 on first run 
+        cmp ax, life_width    ;  ZF is -7 on first run 
         JNE Draw_Life3_Horizontal  ; (ax != player_size)
         mov cx, life3_x ; x
         inc dx
         mov ax, dx
         sub ax, life3_y ; y
-        cmp ax, 8
+        cmp ax, life_height
         jne Draw_Life3_Horizontal        
     ret
 draw_life3 endp
@@ -898,13 +1032,15 @@ draw_life3 endp
 draw_enemy1 proc near
     mov cx, enemy1_x ; CX = X, set initial x coordinates 
     mov dx, enemy1_y ; DX = Y, set initial y coordinates
+    mov si, offset soccer_color_pattern
     ;mov prev_x
 
     Draw_Enemy1_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel                000000000
-        mov al, 0Ch ;color light red                                000000000
+        mov al, [si] ;color light red                                000000000
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
+        inc si
         inc cx  ; initial is cx ++, 161 0000 0000 
         mov ax, cx
         sub ax, enemy1_x
@@ -1138,21 +1274,21 @@ drawPlayer proc near
     ;mov prev_x
 
     Draw_Player_Horizontal:
-        mov ah, 0Ch ;configuration to printing pixel
-        mov al, [si] ;color pattern
+        mov ah, 0Ch ; configuration to printing pixel
+        mov al, [si] ; color pattern
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc si
         inc cx  ; 
         mov ax, cx
         sub ax, player_x
-        cmp ax, player_size         ;   15
+        cmp ax, player_size         ;   width
         JNE Draw_Player_Horizontal
         mov cx, player_x
         inc dx
         mov ax, dx
         sub ax, player_y
-        cmp ax, player_size
+        cmp ax, player_size         ; height
         jne Draw_Player_Horizontal
     ret
 drawPlayer endp
@@ -1295,7 +1431,7 @@ menu_drawTopBorder proc
 
     menu_Draw_TopBorder_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 0Ah ;color
+        mov al, 0Eh ;color
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
@@ -1319,7 +1455,7 @@ menu_drawBottomBorder proc
 
 menu_Draw_BottomBorder_Horizontal:
         mov ah, 0Ch ;configuration to printing pixel
-        mov al, 0Ah ;color white
+        mov al, 0Eh ;color white
         mov bh, 00h ;page number (disregard)
         int 10h ; call dos for printing pixel
         inc cx  ; initial is cx ++, 161 0000 0000 
